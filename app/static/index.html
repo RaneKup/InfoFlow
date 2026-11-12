@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="InfoFlow AI — личная база знаний с AI-резюме, тегами и поиском по смыслу.">
+  <title>InfoFlow AI</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <section id="auth-screen" class="auth-screen">
+    <div class="auth-visual">
+      <a class="brand brand--auth" href="/" aria-label="InfoFlow AI">
+        <span class="brand-mark" aria-hidden="true">IF</span>
+        <span class="brand-text">InfoFlow <em>AI</em></span>
+      </a>
+
+      <div class="auth-statement">
+        <p class="eyebrow">Личная база знаний</p>
+        <h1>Сохраняйте.<br>Находите.<br>Не теряйте.</h1>
+        <p class="auth-lead">Ссылки, заметки и файлы. AI готовит резюме, расставляет теги и ищет по смыслу.</p>
+      </div>
+
+      <p class="auth-foot">InfoFlow AI · 2026</p>
+    </div>
+
+    <div class="auth-panel">
+      <div class="auth-card">
+        <div>
+          <p class="eyebrow">Аккаунт</p>
+          <h2>Личная библиотека</h2>
+        </div>
+
+        <div class="auth-tabs" role="tablist">
+          <button class="auth-tab is-active" data-auth-tab="login" type="button" role="tab">Вход</button>
+          <button class="auth-tab" data-auth-tab="register" type="button" role="tab">Регистрация</button>
+        </div>
+
+        <form id="login-form" class="auth-form" autocomplete="on">
+          <label class="field">
+            <span>Email</span>
+            <input type="email" name="email" placeholder="you@example.com" required autocomplete="email">
+          </label>
+          <label class="field">
+            <span>Пароль</span>
+            <input type="password" name="password" placeholder="••••••••" required minlength="1" autocomplete="current-password">
+          </label>
+          <p class="form-error" id="login-error" role="alert"></p>
+          <button class="btn btn--primary btn--wide" type="submit">Войти</button>
+        </form>
+
+        <form id="register-form" class="auth-form is-hidden" autocomplete="on">
+          <label class="field">
+            <span>Email</span>
+            <input type="email" name="email" placeholder="you@example.com" required autocomplete="email">
+          </label>
+          <label class="field">
+            <span>Пароль</span>
+            <input type="password" name="password" placeholder="Минимум 8 символов" required minlength="8" autocomplete="new-password">
+          </label>
+          <p class="form-error" id="register-error" role="alert"></p>
+          <button class="btn btn--primary btn--wide" type="submit">Создать аккаунт</button>
+        </form>
+
+        <p class="auth-hint">Без папок и ручной сортировки. Сохраняйте — остальное сделает InfoFlow.</p>
+      </div>
+    </div>
+  </section>
+
+  <div id="app-screen" class="app-screen is-hidden">
+    <header class="topbar">
+      <a class="brand" href="/" aria-label="InfoFlow AI">
+        <span class="brand-mark" aria-hidden="true">IF</span>
+        <span class="brand-text">InfoFlow <em>AI</em></span>
+      </a>
+
+      <div class="search-box">
+        <span class="search-icon" aria-hidden="true">⌕</span>
+        <input id="search-input" type="search" placeholder="Поиск по библиотеке" autocomplete="off">
+        <select id="search-mode" title="Режим поиска" aria-label="Режим поиска">
+          <option value="hybrid">Гибрид</option>
+          <option value="keyword">Ключевые слова</option>
+          <option value="semantic">По смыслу</option>
+        </select>
+      </div>
+
+      <div class="user-menu">
+        <span id="user-email" class="user-email" title="Текущий пользователь"></span>
+        <button id="logout-btn" class="link-btn" type="button">Выйти</button>
+      </div>
+    </header>
+
+    <nav class="filter-bar" aria-label="Фильтры">
+      <div class="filter-nav">
+        <button class="side-link is-active" data-type="" type="button">Все</button>
+        <button class="side-link" data-type="link" type="button">Ссылки</button>
+        <button class="side-link" data-type="note" type="button">Заметки</button>
+        <button class="side-link" data-type="file" type="button">Файлы</button>
+      </div>
+      <span class="filter-note">AI-библиотека</span>
+    </nav>
+
+    <div class="layout">
+      <main class="content">
+        <div class="library-head">
+          <div>
+            <p class="eyebrow">Библиотека</p>
+            <h2 id="items-title">Моя библиотека</h2>
+            <p class="muted" id="items-count">Загрузка…</p>
+          </div>
+          <div class="library-actions">
+            <span id="search-meta" class="search-meta is-hidden"></span>
+            <button id="refresh-btn" class="btn btn--ghost btn--small" type="button">Обновить</button>
+          </div>
+        </div>
+
+        <details class="composer">
+          <summary class="composer-toggle">
+            <span class="composer-toggle__plus">+</span>
+            <span>Новая запись</span>
+            <span class="composer-toggle__hint">Ссылка, заметка или файл</span>
+          </summary>
+
+          <div class="composer-body">
+            <div class="composer-tabs" role="tablist">
+              <button class="composer-tab is-active" data-composer="link" type="button" role="tab">Ссылка</button>
+              <button class="composer-tab" data-composer="note" type="button" role="tab">Заметка</button>
+              <button class="composer-tab" data-composer="file" type="button" role="tab">Файл</button>
+            </div>
+
+            <form id="link-form" class="composer-form">
+              <div class="composer-row">
+                <label class="field field--grow">
+                  <span>URL страницы</span>
+                  <input name="url" type="url" placeholder="https://example.com/article" required autocomplete="off">
+                </label>
+                <label class="field field--title">
+                  <span>Заголовок <em>необязательно</em></span>
+                  <input name="title" type="text" placeholder="AI придумает сам" maxlength="512" autocomplete="off">
+                </label>
+              </div>
+              <div class="composer-row composer-row--bottom">
+                <label class="field field--grow">
+                  <span>Теги <em>через запятую</em></span>
+                  <input name="tags" type="text" placeholder="python, безопасность" maxlength="300" autocomplete="off">
+                </label>
+                <button class="btn btn--primary" type="submit">Сохранить</button>
+              </div>
+            </form>
+
+            <form id="note-form" class="composer-form is-hidden">
+              <label class="field">
+                <span>Текст заметки</span>
+                <textarea name="text" rows="5" placeholder="Идея, мысль, фрагмент текста…" required></textarea>
+              </label>
+              <div class="composer-row composer-row--bottom">
+                <label class="field field--grow">
+                  <span>Заголовок <em>необязательно</em></span>
+                  <input name="title" type="text" placeholder="AI предложит заголовок" maxlength="512" autocomplete="off">
+                </label>
+                <label class="field field--tags">
+                  <span>Теги</span>
+                  <input name="tags" type="text" placeholder="идея, работа" maxlength="300" autocomplete="off">
+                </label>
+                <button class="btn btn--primary" type="submit">Сохранить</button>
+              </div>
+            </form>
+
+            <form id="file-form" class="composer-form is-hidden">
+              <label class="dropzone" id="dropzone">
+                <input type="file" name="file" id="file-input" accept=".pdf,.txt,.md,.markdown,.csv,.json,.html,.htm,.log,.rst,.py,.js,.ts,.yml,.yaml" required>
+                <span class="dropzone-title" id="dropzone-title">Перетащите файл или нажмите</span>
+                <span class="dropzone-hint">PDF, TXT, MD, CSV, JSON, HTML · до 25 МБ</span>
+              </label>
+              <div class="composer-row composer-row--bottom">
+                <label class="field field--grow">
+                  <span>Заголовок <em>необязательно</em></span>
+                  <input name="title" type="text" placeholder="По умолчанию — имя файла" maxlength="512" autocomplete="off">
+                </label>
+                <label class="field field--tags">
+                  <span>Теги</span>
+                  <input name="tags" type="text" placeholder="отчёт, research" maxlength="300" autocomplete="off">
+                </label>
+                <button class="btn btn--primary" type="submit">Загрузить</button>
+              </div>
+            </form>
+
+            <p class="form-error" id="composer-error" role="alert"></p>
+            <p class="composer-note">AI сделает резюме, подберёт теги и сохранит материал для поиска по смыслу.</p>
+          </div>
+        </details>
+
+        <div id="items-grid" class="items-grid" aria-live="polite"></div>
+
+        <div id="empty-state" class="empty-state is-hidden">
+          <h3>Пока пусто</h3>
+          <p>Сохраните первую ссылку, заметку или файл — и библиотека начнёт наполняться.</p>
+        </div>
+
+        <div class="load-more-wrap">
+          <button id="load-more" class="btn btn--ghost is-hidden" type="button">Показать ещё</button>
+        </div>
+      </main>
+
+      <aside class="rail">
+        <section class="rail-block">
+          <div class="rail-head">
+            <p class="eyebrow">Теги</p>
+            <button id="clear-tag" class="link-btn is-hidden" type="button">Сбросить</button>
+          </div>
+          <div id="tag-list" class="tag-list">
+            <p class="muted">Пока нет тегов</p>
+          </div>
+        </section>
+
+        <section class="rail-block">
+          <p class="eyebrow">Статистика</p>
+          <div class="side-stats" id="stats-block">
+            <div class="stat">
+              <span class="stat-value" id="stat-total">0</span>
+              <span class="stat-label">записей</span>
+            </div>
+            <div class="stat">
+              <span class="stat-value" id="stat-tags">0</span>
+              <span class="stat-label">тегов</span>
+            </div>
+            <div class="stat">
+              <span class="stat-value" id="stat-ready">0</span>
+              <span class="stat-label">обработано</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="rail-block rail-about">
+          <p class="eyebrow">Как это работает</p>
+          <p>AI извлекает текст, готовит резюме, расставляет теги и строит индекс для поиска по смыслу.</p>
+        </section>
+      </aside>
+    </div>
+  </div>
+
+  <template id="item-template">
+    <article class="item-card">
+      <div class="item-card__top">
+        <span class="type-badge"><span class="type-icon"></span><span class="type-label"></span></span>
+        <span class="status-badge"></span>
+        <span class="match-badge"></span>
+      </div>
+      <h3 class="item-title"></h3>
+      <p class="item-summary"></p>
+      <div class="item-tags"></div>
+      <div class="item-card__footer">
+        <time class="item-date"></time>
+        <div class="item-actions">
+          <button class="icon-btn read" type="button" title="Прочитать полностью">Читать</button>
+          <a class="icon-btn open-link" target="_blank" rel="noopener noreferrer">Открыть</a>
+          <button class="icon-btn download is-hidden" type="button">Скачать</button>
+          <button class="icon-btn reprocess" type="button" title="Переобработать">↻</button>
+          <button class="icon-btn danger delete" type="button" title="Удалить">Удалить</button>
+        </div>
+      </div>
+    </article>
+  </template>
+
+  <div id="item-modal" class="modal is-hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title" aria-hidden="true">
+    <div class="modal__backdrop" data-modal-close></div>
+    <div class="modal__card">
+      <header class="modal__head">
+        <div class="modal__badges">
+          <span class="type-badge"><span class="type-icon" id="modal-type-icon"></span><span class="type-label" id="modal-type-label"></span></span>
+          <span class="status-badge" id="modal-status"></span>
+        </div>
+        <button class="icon-btn modal__close" data-modal-close type="button" aria-label="Закрыть">✕</button>
+      </header>
+
+      <h2 id="modal-title" class="modal__title"></h2>
+      <p id="modal-meta" class="modal__meta"></p>
+
+      <div id="modal-scroll" class="modal__scroll">
+        <section class="modal__section">
+          <div class="modal__section-head">
+            <h3>AI-резюме</h3>
+          </div>
+          <p id="modal-summary" class="modal__summary"></p>
+        </section>
+
+        <section class="modal__section">
+          <div class="modal__section-head">
+            <h3>Полный текст</h3>
+            <button id="modal-copy" class="icon-btn" type="button">Скопировать</button>
+          </div>
+          <div id="modal-content" class="modal__content"></div>
+        </section>
+
+        <section class="modal__section">
+          <div class="modal__section-head">
+            <h3>Теги</h3>
+            <span class="modal__hint">можно исправить</span>
+          </div>
+          <div id="modal-tags" class="modal__tags"></div>
+          <form id="modal-tags-form" class="modal__tags-form">
+            <input id="modal-tags-input" name="tags" type="text" placeholder="тег1, тег2, тег3" maxlength="500" autocomplete="off">
+            <button class="btn btn--ghost btn--small" type="submit">Сохранить</button>
+          </form>
+          <p class="modal__hint">Новый список заменит автоматические и ручные теги.</p>
+        </section>
+      </div>
+
+      <footer class="modal__actions">
+        <a id="modal-open-link" class="btn btn--ghost btn--small is-hidden" target="_blank" rel="noopener noreferrer">Открыть источник</a>
+        <button id="modal-download" class="btn btn--ghost btn--small is-hidden" type="button">Скачать файл</button>
+        <button id="modal-reprocess" class="btn btn--ghost btn--small" type="button">Переобработать</button>
+        <button id="modal-delete" class="btn btn--danger btn--small" type="button">Удалить</button>
+      </footer>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="/static/app.js" defer></script>
+</body>
+</html>

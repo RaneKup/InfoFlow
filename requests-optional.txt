@@ -1,0 +1,11 @@
+# Полный набор опциональных зависимостей InfoFlow AI.
+# Установка: pip install -r requests-optional.txt
+# Внимание: ChromaDB и sentence-transformers занимают много места.
+-r requests.txt
+
+sentence-transformers>=3.0,<6
+chromadb>=0.5,<2
+celery>=5.4,<6
+redis>=5.0,<7
+python-telegram-bot>=21,<23
+psycopg[binary]>=3.2,<4

@@ -1,0 +1,10 @@
+# Зависимости для Docker-образа InfoFlow AI.
+# Здесь только относительно лёгкие «инфраструктурные» пакеты.
+# Тяжёлые опциональные компоненты (sentence-transformers, chromadb)
+# устанавливаются отдельно: docker build --build-arg INSTALL_OPTIONAL=true .
+-r requests.txt
+
+psycopg[binary]>=3.2,<4
+celery>=5.4,<6
+redis>=5.0,<7
+python-telegram-bot>=21,<23

@@ -1,0 +1,102 @@
+name: infoflow
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: infoflow
+      POSTGRES_PASSWORD: infoflow
+      POSTGRES_DB: infoflow
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U infoflow -d infoflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  app:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      APP_NAME: InfoFlow AI
+      ENVIRONMENT: production
+      SECRET_KEY: ${SECRET_KEY:-change-me-in-production-please-use-a-long-random-string}
+      DATABASE_URL: postgresql+psycopg://infoflow:infoflow@db:5432/infoflow
+      AUTO_CREATE_TABLES: "false"
+      REDIS_URL: redis://redis:6379/0
+      USE_CELERY: "true"
+      VECTOR_BACKEND: local
+      EMBEDDING_PROVIDER: hash
+      AI_PROVIDER: ${AI_PROVIDER:-auto}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      JINA_API_KEY: ${JINA_API_KEY:-}
+      CORS_ORIGINS: ${CORS_ORIGINS:-*}
+      ALLOW_PRIVATE_URLS: "false"
+    command: >
+      sh -c "alembic upgrade head &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    ports:
+      - "8000:8000"
+    volumes:
+      - app_data:/app/data
+
+  worker:
+    build: .
+    depends_on:
+      app:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+psycopg://infoflow:infoflow@db:5432/infoflow
+      AUTO_CREATE_TABLES: "false"
+      REDIS_URL: redis://redis:6379/0
+      USE_CELERY: "true"
+      VECTOR_BACKEND: local
+      EMBEDDING_PROVIDER: hash
+      AI_PROVIDER: ${AI_PROVIDER:-auto}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+    command: celery -A app.workers.celery_app.celery_app worker --loglevel=info --concurrency=2
+    volumes:
+      - app_data:/app/data
+
+  bot:
+    build: .
+    profiles: ["bot"]
+    depends_on:
+      app:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+psycopg://infoflow:infoflow@db:5432/infoflow
+      AUTO_CREATE_TABLES: "false"
+      USE_CELERY: "false"
+      VECTOR_BACKEND: local
+      EMBEDDING_PROVIDER: hash
+      AI_PROVIDER: ${AI_PROVIDER:-auto}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TRANSCRIPTION_API_KEY: ${TRANSCRIPTION_API_KEY:-}
+    command: python -m app.bot.telegram_bot
+    volumes:
+      - app_data:/app/data
+
+volumes:
+  postgres_data:
+  redis_data:
+  app_data:
