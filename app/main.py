@@ -4,7 +4,7 @@ import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -66,6 +66,23 @@ app.add_middleware(
 
 app.include_router(api_router, prefix=settings.api_prefix)
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+@app.middleware("http")
+async def cache_control(request: Request, call_next):
+    """Не даём браузеру закешировать старую версию интерфейса.
+
+    Без этого после обновления приложения браузер мог продолжать
+    использовать прежние styles.css и app.js, из-за чего новые элементы
+    не работали, а вёрстка выглядела сломанной.
+    """
+    response = await call_next(request)
+    path = request.url.path
+    if path == "/" or path.endswith(".html"):
+        response.headers["Cache-Control"] = "no-store, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+    elif path.startswith("/static/"):
+        response.headers["Cache-Control"] = "no-cache, must-revalidate"
+    return response
 
 @app.get("/", include_in_schema=False)
 def index() -> FileResponse:

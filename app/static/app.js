@@ -23,9 +23,123 @@
     semantic: "по смыслу",
   };
 
+  const SEARCH_MODE_LABELS = {
+    hybrid: "Гибрид",
+    keyword: "Ключевые слова",
+    semantic: "По смыслу",
+  };
+
+  const AI_MODE_HINTS = {
+    auto: "AI подготовит заголовок, резюме и тематические теги. Текст останется без изменений.",
+    tags: "AI подберёт тематические теги, а заголовок и резюме останутся такими, как вы их указали.",
+    manual: "Запись сохранится без резюме и автотегов. Заголовок и теги можно задать вручную.",
+  };
+
+  const SETTINGS_KEY = "infoflow_settings";
+  const DEFAULT_SETTINGS = {
+    theme: "dark",
+    accent: "graphite",
+    font: "normal",
+    density: "normal",
+    motion: "full",
+    aiMode: "auto",
+    searchMode: "hybrid",
+  };
+
+  const SETTING_VALUES = {
+    theme: ["dark", "light", "system"],
+    accent: ["graphite", "blue", "green", "amber"],
+    font: ["small", "normal", "large"],
+    density: ["normal", "compact"],
+    motion: ["full", "reduced"],
+    aiMode: ["auto", "tags", "manual"],
+    searchMode: ["hybrid", "keyword", "semantic"],
+  };
+
+  const SETTING_LABELS = {
+    theme: { dark: "Тёмная тема", light: "Светлая тема", system: "Системная тема" },
+    accent: { graphite: "Акцент: графит", blue: "Акцент: синий", green: "Акцент: зелёный", amber: "Акцент: янтарный" },
+    font: { small: "Компактный текст", normal: "Обычный текст", large: "Крупный текст" },
+    density: { normal: "Свободная плотность", compact: "Компактная плотность" },
+    motion: { full: "Анимации включены", reduced: "Анимации отключены" },
+    aiMode: { auto: "Новые записи: с ИИ", tags: "Новые записи: только теги", manual: "Новые записи: вручную" },
+    searchMode: { hybrid: "Поиск: гибрид", keyword: "Поиск: ключевые слова", semantic: "Поиск: по смыслу" },
+  };
+
+  const LEGAL_DOCS = {
+    privacy: {
+      title: "Политика конфиденциальности",
+      html: `
+        <p><strong>Дата обновления:</strong> 17 ноября 2026 года.</p>
+        <p>InfoFlow AI — приложение для личной базы знаний. Мы обрабатываем только те данные, которые нужны для работы библиотеки, поиска и синхронизации с Telegram.</p>
+        <h3>Какие данные мы храним</h3>
+        <ul>
+          <li>Адрес электронной почты и хеш пароля для входа в аккаунт.</li>
+          <li>Сохранённые ссылки, заметки, файлы, извлечённый текст, заголовки, резюме и теги.</li>
+          <li>Технические данные: дата создания записи, статус обработки, идентификатор Telegram при привязке аккаунта.</li>
+        </ul>
+        <h3>Зачем нужны данные</h3>
+        <p>Для аутентификации, отображения библиотеки, поиска по ключевым словам и смыслу, подготовки резюме и тегов, а также для работы Telegram-бота, если вы его используете.</p>
+        <h3>AI-обработка</h3>
+        <p>Если для записи выбран режим «С ИИ» или «Только теги», текст материала может быть передан настроенному администратором AI-провайдеру исключительно для подготовки резюме или тегов. В режиме «Вручную» материал не отправляется AI-провайдеру.</p>
+        <h3>Где хранятся данные</h3>
+        <p>Аккаунты и библиотека хранятся в базе данных экземпляра InfoFlow AI. Настройки темы и интерфейса сохраняются только в localStorage вашего браузера. Токен входа также хранится в localStorage.</p>
+        <h3>Передача третьим лицам</h3>
+        <p>Мы не продаём и не передаём ваши данные для рекламы. Передача возможна только техническим поставщикам, необходимым для работы сервиса, или по требованию закона.</p>
+        <h3>Хранение и удаление</h3>
+        <p>Данные хранятся до удаления записи или аккаунта. Записи можно удалить в интерфейсе. Для удаления аккаунта обратитесь к администратору вашего экземпляра InfoFlow AI.</p>
+        <h3>Ваши права</h3>
+        <p>Вы можете просматривать, исправлять и удалять свои записи, менять теги и настройки. Вы также вправе запросить информацию об обработке ваших данных у администратора сервиса.</p>
+        <h3>Изменения политики</h3>
+        <p>Актуальная версия политики всегда доступна по ссылке внизу сайта. При существенных изменениях мы обновим дату документа.</p>
+      `,
+    },
+    terms: {
+      title: "Условия использования",
+      html: `
+        <p><strong>Дата обновления:</strong> 17 ноября 2026 года.</p>
+        <p>Используя InfoFlow AI, вы соглашаетесь с настоящими условиями. Если вы не согласны с ними, пожалуйста, не используйте сервис.</p>
+        <h3>Назначение сервиса</h3>
+        <p>InfoFlow AI помогает сохранять ссылки, заметки и файлы, формировать личную библиотеку и искать в ней информацию. Сервис предоставляется как есть и может развиваться.</p>
+        <h3>Аккаунт и безопасность</h3>
+        <p>Вы отвечаете за сохранность пароля и действия в своём аккаунте. Не передавайте учётные данные третьим лицам. Сообщите администратору, если заметили несанкционированный доступ.</p>
+        <h3>Ваш контент</h3>
+        <p>Права на сохранённые материалы остаются у вас или их законных правообладателей. Вы подтверждаете, что имеете право сохранять и обрабатывать загружаемый контент. Не загружайте материалы, нарушающие закон или права других людей.</p>
+        <h3>AI-функции</h3>
+        <p>Резюме и теги формируются автоматически и могут содержать ошибки. Проверяйте важную информацию и используйте AI-результаты как вспомогательные, а не как единственный источник истины.</p>
+        <h3>Допустимое использование</h3>
+        <ul>
+          <li>Не пытайтесь получить доступ к чужим аккаунтам или данным.</li>
+          <li>Не нарушайте работу сервиса, не обходите ограничения и не создавайте чрезмерную нагрузку.</li>
+          <li>Не используйте сервис для распространения незаконного или вредоносного контента.</li>
+        </ul>
+        <h3>Доступность и ответственность</h3>
+        <p>Мы стремимся поддерживать стабильную работу, но не гарантируем непрерывный доступ и сохранность данных при сбоях инфраструктуры. Делайте резервные копии важных материалов.</p>
+        <h3>Изменения условий</h3>
+        <p>Условия могут обновляться вместе с развитием сервиса. Актуальная версия публикуется внизу сайта.</p>
+        <h3>Применимое право</h3>
+        <p>Вопросы, не урегулированные настоящими условиями, решаются в соответствии с применимым законодательством и правилами администратора экземпляра InfoFlow AI.</p>
+      `,
+    },
+  };
+
+  function loadSettings() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || "{}");
+      const settings = { ...DEFAULT_SETTINGS };
+      for (const [key, allowed] of Object.entries(SETTING_VALUES)) {
+        if (allowed.includes(saved[key])) settings[key] = saved[key];
+      }
+      return settings;
+    } catch (_error) {
+      return { ...DEFAULT_SETTINGS };
+    }
+  }
+
   const state = {
     token: localStorage.getItem("infoflow_token") || "",
     user: null,
+    settings: loadSettings(),
     type: "",
     tag: null,
     query: "",
@@ -38,7 +152,6 @@
     pollTimer: null,
     composer: "link",
     toastTimer: null,
-    searchTimer: null,
     modalId: null,
     modalItem: null,
   };
@@ -71,7 +184,9 @@
     const response = await fetch(`/api${path}`, { method, headers, body: payload });
     if (response.status === 401 && auth) {
       handleUnauthorized();
-      throw new Error("Сессия истекла. Войдите снова.");
+      const authError = new Error("Сессия истекла. Войдите снова.");
+      authError.status = 401;
+      throw authError;
     }
     if (!response.ok) {
       let parsed = null;
@@ -79,7 +194,9 @@
         parsed = await response.json();
       } catch (_error) {
         }
-      throw new Error(formatError(parsed, `Ошибка ${response.status}`));
+      const requestError = new Error(formatError(parsed, `Ошибка ${response.status}`));
+      requestError.status = response.status;
+      throw requestError;
     }
     if (response.status === 204) return null;
     const contentType = response.headers.get("content-type") || "";
@@ -91,6 +208,7 @@
     state.token = "";
     state.user = null;
     localStorage.removeItem("infoflow_token");
+    localStorage.removeItem("infoflow_email");
     showAuth();
   }
 
@@ -159,7 +277,137 @@
     }
   }
 
+  function saveSettings() {
+    try {
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(state.settings));
+    } catch (_error) {
+      }
+  }
+
+  function resolvedTheme() {
+    if (state.settings.theme !== "system") return state.settings.theme;
+    return window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
+  }
+
+  function applySettings() {
+    const settings = state.settings;
+    const root = document.documentElement;
+    const theme = resolvedTheme();
+    root.dataset.theme = theme;
+    root.dataset.accent = settings.accent;
+    root.dataset.font = settings.font;
+    root.dataset.density = settings.density;
+    root.dataset.motion = settings.motion;
+    const themeColor = document.querySelector('meta[name="theme-color"]');
+    if (themeColor) themeColor.content = theme === "light" ? "#f6f6f2" : "#070707";
+    syncSettingsUI();
+  }
+
+  function syncSettingsUI() {
+    $$("[data-setting]").forEach((group) => {
+      const key = group.dataset.setting;
+      $$("[data-value]", group).forEach((button) => {
+        const active = button.dataset.value === state.settings[key];
+        button.classList.toggle("is-active", active);
+        button.setAttribute("aria-pressed", active ? "true" : "false");
+      });
+    });
+  }
+
+  function setSearchMode(mode, { persist = false } = {}) {
+    const next = SEARCH_MODE_LABELS[mode] ? mode : "hybrid";
+    state.mode = next;
+    const select = $("#search-mode");
+    if (select) select.value = next;
+    if (persist) {
+      state.settings.searchMode = next;
+      saveSettings();
+      syncSettingsUI();
+    }
+  }
+
+  function currentAiMode() {
+    return $('input[name="ai-mode"]:checked')?.value || state.settings.aiMode || "auto";
+  }
+
+  function setComposerAiMode(mode) {
+    const next = AI_MODE_HINTS[mode] ? mode : "auto";
+    $$('input[name="ai-mode"]').forEach((input) => {
+      input.checked = input.value === next;
+    });
+    updateAiModeHint();
+  }
+
+  function updateAiModeHint() {
+    const mode = currentAiMode();
+    const note = $("#ai-choice-note");
+    if (note) note.textContent = AI_MODE_HINTS[mode] || AI_MODE_HINTS.auto;
+    const noteBottom = $("#composer-note");
+    if (noteBottom) {
+      noteBottom.textContent =
+        mode === "manual"
+          ? "Материал будет сохранён без AI-резюме и автоматических тегов."
+          : mode === "tags"
+            ? "AI подберёт только теги. Заголовок и резюме останутся вашими."
+            : "AI сделает резюме, подберёт теги и сохранит материал для поиска по смыслу.";
+    }
+  }
+
+  function openSettings() {
+    const modal = $("#settings-modal");
+    if (!modal) return;
+    syncSettingsUI();
+    modal.classList.remove("is-hidden");
+    modal.setAttribute("aria-hidden", "false");
+    document.body.classList.add("is-locked");
+    $(".modal__close", modal)?.focus();
+  }
+
+  function closeSettings() {
+    const modal = $("#settings-modal");
+    if (!modal) return;
+    modal.classList.add("is-hidden");
+    modal.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("is-locked");
+  }
+
+  function closeLegal() {
+    const modal = $("#legal-modal");
+    if (!modal) return;
+    modal.classList.add("is-hidden");
+    modal.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("is-locked");
+  }
+
+  function openLegal(kind) {
+    const doc = LEGAL_DOCS[kind] || LEGAL_DOCS.privacy;
+    const modal = $("#legal-modal");
+    if (!modal) return;
+    $("#legal-title").textContent = doc.title;
+    $("#legal-body").innerHTML = doc.html;
+    $("#legal-body").scrollTop = 0;
+    modal.classList.remove("is-hidden");
+    modal.setAttribute("aria-hidden", "false");
+    document.body.classList.add("is-locked");
+    $(".modal__close", modal)?.focus();
+  }
+
+  // Делегирование на уровне документа: правовые окна открываются даже если
+  // какой-то другой обработчик не привязался.
+  document.addEventListener("click", (event) => {
+    const legalButton = event.target.closest("[data-legal]");
+    if (legalButton) {
+      event.preventDefault();
+      openLegal(legalButton.dataset.legal);
+      return;
+    }
+    if (event.target.closest("[data-legal-close]")) closeLegal();
+  });
+
   function showAuth() {
+    closeModal();
+    closeSettings();
+    closeLegal();
     $("#app-screen").classList.add("is-hidden");
     $("#auth-screen").classList.remove("is-hidden");
     $("#login-error").textContent = "";
@@ -169,7 +417,10 @@
   function showApp() {
     $("#auth-screen").classList.add("is-hidden");
     $("#app-screen").classList.remove("is-hidden");
-    $("#user-email").textContent = state.user?.email || "";
+    $("#user-email").textContent =
+      state.user?.email || localStorage.getItem("infoflow_email") || "";
+    setSearchMode(state.settings.searchMode);
+    setComposerAiMode(state.settings.aiMode);
     loadAll();
   }
 
@@ -193,6 +444,7 @@
       state.token = result.access_token;
       state.user = result.user;
       localStorage.setItem("infoflow_token", state.token);
+      localStorage.setItem("infoflow_email", state.user?.email || "");
       form.reset();
       showApp();
       toast(mode === "login" ? "С возвращением!" : "Аккаунт создан", "success");
@@ -211,6 +463,7 @@
     state.tag = null;
     state.type = "";
     localStorage.removeItem("infoflow_token");
+    localStorage.removeItem("infoflow_email");
     clearTimeout(state.pollTimer);
     closeModal();
     $("#search-input").value = "";
@@ -417,6 +670,11 @@
       if (!summaryText && ["pending", "processing"].includes(item.status)) {
         summaryText = "AI готовит резюме и теги…";
       }
+      if (!summaryText && item.ai_mode === "manual") {
+        summaryText = "Ручная запись без AI-резюме и автоматических тегов.";
+      } else if (!summaryText && item.ai_mode === "tags") {
+        summaryText = "AI подобрал теги, резюме для этой записи не создавалось.";
+      }
       summary.textContent = summaryText || "Описание пока недоступно.";
 
       const tags = $(".item-tags", node);
@@ -569,7 +827,11 @@
     } else {
       summary.textContent = ["pending", "processing"].includes(item.status)
         ? "AI готовит резюме и теги…"
-        : "Резюме пока нет.";
+        : item.ai_mode === "manual"
+          ? "Для этой записи AI-резюме отключено — текст сохранён в том виде, в котором вы его добавили."
+          : item.ai_mode === "tags"
+            ? "Для этой записи AI создавал только теги, без резюме."
+            : "Резюме пока нет.";
     }
 
     const content = $("#modal-content");
@@ -724,6 +986,7 @@
     setBusy(button, true);
 
     const data = new FormData(form);
+    const aiMode = currentAiMode();
     try {
       await api("/items", {
         method: "POST",
@@ -732,10 +995,18 @@
           url: String(data.get("url") || "").trim(),
           title: String(data.get("title") || "").trim() || null,
           tags: parseTags(String(data.get("tags") || "")),
+          ai_mode: aiMode,
         },
       });
       form.reset();
-      toast("Сохранено. AI делает резюме и теги…", "success");
+      toast(
+        aiMode === "manual"
+          ? "Ссылка сохранена без AI-обработки"
+          : aiMode === "tags"
+            ? "Сохранено. AI подбирает теги…"
+            : "Сохранено. AI делает резюме и теги…",
+        "success"
+      );
       await loadAll();
     } catch (error) {
       $("#composer-error").textContent = error.message;
@@ -752,6 +1023,7 @@
     setBusy(button, true);
 
     const data = new FormData(form);
+    const aiMode = currentAiMode();
     try {
       await api("/items", {
         method: "POST",
@@ -760,10 +1032,18 @@
           text: String(data.get("text") || "").trim(),
           title: String(data.get("title") || "").trim() || null,
           tags: parseTags(String(data.get("tags") || "")),
+          ai_mode: aiMode,
         },
       });
       form.reset();
-      toast("Заметка сохранена. AI уже работает…", "success");
+      toast(
+        aiMode === "manual"
+          ? "Заметка сохранена вручную"
+          : aiMode === "tags"
+            ? "Заметка сохранена. AI подбирает теги…"
+            : "Заметка сохранена. AI уже работает…",
+        "success"
+      );
       await loadAll();
     } catch (error) {
       $("#composer-error").textContent = error.message;
@@ -785,16 +1065,25 @@
     }
 
     const data = new FormData();
+    const aiMode = currentAiMode();
     data.append("file", input.files[0]);
     data.append("title", String(new FormData(form).get("title") || ""));
     data.append("tags", String(new FormData(form).get("tags") || ""));
+    data.append("ai_mode", aiMode);
 
     setBusy(button, true, "Загружаю…");
     try {
       await api("/items/upload", { method: "POST", body: data, form: true });
       form.reset();
       $("#dropzone-title").textContent = "Перетащите файл или нажмите";
-      toast("Файл загружен. AI извлекает текст…", "success");
+      toast(
+        aiMode === "manual"
+          ? "Файл загружен без AI-обработки"
+          : aiMode === "tags"
+            ? "Файл загружен. AI подбирает теги…"
+            : "Файл загружен. AI извлекает текст…",
+        "success"
+      );
       await loadAll();
     } catch (error) {
       $("#composer-error").textContent = error.message;
@@ -825,6 +1114,44 @@
     $("#login-form").addEventListener("submit", (event) => handleAuthSubmit(event, "login"));
     $("#register-form").addEventListener("submit", (event) => handleAuthSubmit(event, "register"));
     $("#logout-btn").addEventListener("click", logout);
+
+    $("#settings-btn").addEventListener("click", openSettings);
+    $("#settings-modal").addEventListener("click", (event) => {
+      if (event.target.closest("[data-settings-close]")) {
+        closeSettings();
+        return;
+      }
+      const group = event.target.closest("[data-setting]");
+      const button = event.target.closest("[data-value]");
+      if (!group || !button) return;
+      const key = group.dataset.setting;
+      const value = button.dataset.value;
+      if (!SETTING_VALUES[key]?.includes(value)) return;
+      state.settings[key] = value;
+      saveSettings();
+      applySettings();
+      if (key === "aiMode") setComposerAiMode(value);
+      if (key === "searchMode") {
+        setSearchMode(value);
+        if (state.query) loadItems({ reset: true });
+      }
+      const label = SETTING_LABELS[key]?.[value];
+      if (label) toast(label, "success");
+    });
+
+    $("#settings-reset").addEventListener("click", () => {
+      state.settings = { ...DEFAULT_SETTINGS };
+      saveSettings();
+      applySettings();
+      setComposerAiMode(state.settings.aiMode);
+      setSearchMode(state.settings.searchMode);
+      if (state.query) loadItems({ reset: true });
+      toast("Настройки сброшены", "success");
+    });
+
+    $$('input[name="ai-mode"]').forEach((input) => {
+      input.addEventListener("change", updateAiModeHint);
+    });
 
     $$("[data-composer]").forEach((tab) => {
       tab.addEventListener("click", () => {
@@ -946,8 +1273,9 @@
       }, 320);
     });
 
-    $("#search-mode").addEventListener("change", (event) => {
-      state.mode = event.target.value;
+    const searchSelect = $("#search-mode");
+    searchSelect.addEventListener("change", (event) => {
+      setSearchMode(event.target.value, { persist: true });
       if (state.query) loadItems({ reset: true });
     });
 
@@ -962,6 +1290,14 @@
 
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape") {
+        if (!$("#settings-modal").classList.contains("is-hidden")) {
+          closeSettings();
+          return;
+        }
+        if (!$("#legal-modal").classList.contains("is-hidden")) {
+          closeLegal();
+          return;
+        }
         if (state.modalId) {
           closeModal();
           return;
@@ -977,16 +1313,25 @@
   }
 
   async function init() {
+    applySettings();
     bindEvents();
+    window.matchMedia("(prefers-color-scheme: light)").addEventListener("change", () => {
+      if (state.settings.theme === "system") applySettings();
+    });
     if (!state.token) {
       showAuth();
       return;
     }
+    // Показываем интерфейс сразу: обновление страницы не должно выглядеть
+    // как выход из аккаунта. Если токен действительно истёк, придёт 401
+    // и пользователь вернётся на экран входа.
+    showApp();
     try {
       state.user = await api("/auth/me");
-      showApp();
-    } catch (_error) {
-      handleUnauthorized();
+      localStorage.setItem("infoflow_email", state.user?.email || "");
+      $("#user-email").textContent = state.user?.email || "";
+    } catch (error) {
+      if (error.status === 401) handleUnauthorized();
     }
   }
 

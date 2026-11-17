@@ -61,6 +61,9 @@ class Item(Base):
         ForeignKey("users.id", ondelete="CASCADE"), index=True, nullable=False
     )
     type: Mapped[str] = mapped_column(String(16), default="note", nullable=False)
+    ai_mode: Mapped[str] = mapped_column(
+        String(16), default="auto", server_default="auto", nullable=False
+    )
     title: Mapped[str] = mapped_column(String(512), default="", nullable=False)
     original_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     content_text: Mapped[str] = mapped_column(Text, default="", nullable=False)

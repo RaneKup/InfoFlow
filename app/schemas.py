@@ -8,6 +8,7 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field, model_validator
 
 ItemType = Literal["link", "note", "file"]
 SearchMode = Literal["hybrid", "keyword", "semantic"]
+AiMode = Literal["auto", "tags", "manual"]
 
 class UserCreate(BaseModel):
     email: EmailStr
@@ -49,6 +50,7 @@ class ItemCreate(BaseModel):
     text: str | None = Field(default=None, max_length=500_000)
     title: str | None = Field(default=None, max_length=512)
     tags: list[str] = Field(default_factory=list, max_length=20)
+    ai_mode: AiMode = "auto"
 
     @model_validator(mode="after")
     def _validate_payload(self) -> "ItemCreate":
@@ -68,6 +70,7 @@ class ItemUpdate(BaseModel):
     title: str | None = Field(default=None, max_length=512)
     summary: str | None = Field(default=None, max_length=4000)
     tags: list[str] | None = Field(default=None, max_length=20)
+    ai_mode: AiMode | None = Field(default=None)
 
     replace_tags: bool = False
 
@@ -76,6 +79,7 @@ class ItemListItem(BaseModel):
 
     id: int
     type: str
+    ai_mode: str = "auto"
     title: str
     original_url: str | None = None
     summary: str

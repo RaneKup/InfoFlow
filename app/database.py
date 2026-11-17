@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Generator
 
-from sqlalchemy import Engine, create_engine, event
+from sqlalchemy import Engine, create_engine, event, inspect, text
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from .config import ensure_directories, get_settings
@@ -53,10 +53,30 @@ def get_db() -> Generator[Session, None, None]:
     finally:
         db.close()
 
+def _ensure_runtime_columns(engine: Engine) -> None:
+    """Добавляет недостающие колонки в уже существующие БД.
+
+    create_all() не изменяет существующие таблицы, поэтому при обновлении
+    проекта старые базы должны получать новые поля без ручного вмешательства.
+    """
+    inspector = inspect(engine)
+    tables = set(inspector.get_table_names())
+    if "items" not in tables:
+        return
+    columns = {column["name"] for column in inspector.get_columns("items")}
+    if "ai_mode" in columns:
+        return
+    with engine.begin() as connection:
+        connection.execute(
+            text("ALTER TABLE items ADD COLUMN ai_mode VARCHAR(16) DEFAULT 'auto' NOT NULL")
+        )
+
 def init_db() -> None:
     from . import models
 
-    Base.metadata.create_all(bind=get_engine())
+    engine = get_engine()
+    Base.metadata.create_all(bind=engine)
+    _ensure_runtime_columns(engine)
 
 def reset_engine() -> None:
     global _engine, _session_factory

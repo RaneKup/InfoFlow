@@ -24,6 +24,7 @@ from ..database import get_db
 from ..deps import get_current_user
 from ..models import Item, Tag, User
 from ..schemas import (
+    AiMode,
     ItemCreate,
     ItemListItem,
     ItemListOut,
@@ -79,6 +80,7 @@ def create_new_item(
         url=payload.url.strip() if payload.url else None,
         text=payload.text,
         manual_tags=payload.tags,
+        ai_mode=payload.ai_mode,
     )
     enqueue_processing(item.id, background_tasks)
     return item
@@ -140,6 +142,7 @@ async def upload_file(
     file: UploadFile = File(...),
     title: str | None = Form(None),
     tags: str | None = Form(None),
+    ai_mode: AiMode = Form("auto"),
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> Item:
@@ -185,6 +188,7 @@ async def upload_file(
             file_size=total,
             mime_type=file.content_type,
             manual_tags=_parse_form_tags(tags),
+            ai_mode=ai_mode,
         )
     except Exception:
         target.unlink(missing_ok=True)
@@ -208,6 +212,8 @@ def update_item(
     user: User = Depends(get_current_user),
 ) -> Item:
     item = _get_owned_item(db, item_id, user)
+    if payload.ai_mode is not None:
+        item.ai_mode = payload.ai_mode
     if payload.title is not None:
         item.title = payload.title.strip()[:512] or "Без названия"
     if payload.summary is not None:

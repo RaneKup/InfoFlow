@@ -136,6 +136,61 @@ def test_heuristic_tags_are_topical(client):
     assert not names & {"который", "которая", "является", "также", "нужно", "нельзя"}
     assert len(names) >= 2
 
+def test_manual_mode_keeps_user_content_without_ai(client):
+    user = register_user(client)
+    item = create_note(
+        client,
+        user,
+        JWT_TEXT,
+        title="Моя заметка",
+        ai_mode="manual",
+    )
+    detail = client.get(f"/api/items/{item['id']}", headers=auth_headers(user)).json()
+
+    assert detail["ai_mode"] == "manual"
+    assert detail["status"] == "ready"
+    assert detail["title"] == "Моя заметка"
+    assert detail["summary"] == ""
+    assert detail["tags"] == []
+
+
+def test_tags_only_mode_adds_tags_without_summary(client):
+    user = register_user(client)
+    item = create_note(
+        client,
+        user,
+        JWT_TEXT,
+        title="JWT аутентификация",
+        ai_mode="tags",
+    )
+    detail = client.get(f"/api/items/{item['id']}", headers=auth_headers(user)).json()
+
+    assert detail["ai_mode"] == "tags"
+    assert detail["status"] == "ready"
+    assert detail["title"] == "JWT аутентификация"
+    assert detail["summary"] == ""
+    names = {tag["name"] for tag in detail["tags"]}
+    assert {"jwt", "аутентификация"} <= names
+    assert all(tag["is_auto_generated"] for tag in detail["tags"])
+
+
+def test_heuristic_tags_prefer_meaningful_phrases(client):
+    user = register_user(client)
+    text = (
+        "PostgreSQL использует индексы B-tree для ускорения поиска по диапазону. "
+        "Индекс B-tree помогает быстро находить строки в таблице. "
+        "Планировщик запросов выбирает индекс, если это выгодно. "
+        "Важно регулярно обновлять статистику и следить за размером индексов."
+    )
+    item = create_note(client, user, text, title="Индексы PostgreSQL")
+    detail = client.get(f"/api/items/{item['id']}", headers=auth_headers(user)).json()
+    names = {tag["name"] for tag in detail["tags"]}
+
+    assert "postgresql" in names
+    assert names & {"индекс", "индексы", "b tree"}
+    assert not names & {"важно", "использует", "помогает", "быстро", "строки"}
+
+
 def test_file_upload_and_download(client):
     user = register_user(client)
     headers = auth_headers(user)

@@ -30,10 +30,12 @@ def create_item(
     file_size: int | None = None,
     mime_type: str | None = None,
     manual_tags: list[str] | None = None,
+    ai_mode: str = "auto",
 ) -> Item:
     item = Item(
         user_id=user.id,
         type=item_type,
+        ai_mode=ai_mode if ai_mode in {"auto", "tags", "manual"} else "auto",
         title=(title or "").strip()[:512],
         original_url=url,
         content_text=clean_text(text or ""),
@@ -52,10 +54,16 @@ def create_item(
     db.refresh(item)
     return item
 
+def _fallback_title(item: Item, text: str) -> str:
+    if item.type == "file" and item.file_name:
+        return Path(item.file_name).stem
+    return make_title_from_text(text)
+
 def _prepare_content(item: Item) -> Analysis:
     settings = get_settings()
     text = item.content_text or ""
     title = (item.title or "").strip()
+    mode = item.ai_mode if item.ai_mode in {"auto", "tags", "manual"} else "auto"
 
     if item.type == "link" and item.original_url and not text.strip():
         page = fetch_web_page(item.original_url)
@@ -70,17 +78,23 @@ def _prepare_content(item: Item) -> Analysis:
     if not text and not title:
         raise ValueError("Не удалось извлечь текст из материала")
 
-    analysis = analyze_content(title=title, text=text, item_type=item.type)
+    analysis = analyze_content(title=title, text=text, item_type=item.type, mode=mode)
     if not title:
-        title = analysis.title or make_title_from_text(text)
+        title = analysis.title or _fallback_title(item, text)
     item.title = (title or "Без названия").strip()[:500]
-    item.summary = (analysis.summary or "").strip()[:4000]
+    if mode == "auto":
+        item.summary = (analysis.summary or "").strip()[:4000]
+    elif mode == "manual":
+        item.summary = ""
+    else:
+        item.summary = (item.summary or "").strip()[:4000]
     item.content_text = text
     item.error_message = None
 
     logger.info(
-        "AI-обработка item=%s: provider=%s, теги=%s",
+        "Обработка item=%s: mode=%s, provider=%s, теги=%s",
         item.id,
+        mode,
         analysis.provider,
         analysis.tags,
     )
@@ -144,7 +158,8 @@ def _vectorize(db: Session, item: Item) -> None:
 
 def _run_pipeline(db: Session, item: Item) -> None:
     analysis = _prepare_content(item)
-    apply_auto_tags(db, item, analysis.tags)
+    if item.ai_mode != "manual":
+        apply_auto_tags(db, item, analysis.tags)
     db.flush()
 
     _vectorize(db, item)

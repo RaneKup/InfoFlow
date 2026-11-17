@@ -73,11 +73,17 @@ def register_user(client: TestClient, email: str | None = None) -> dict:
 def auth_headers(user: dict) -> dict[str, str]:
     return {"Authorization": f"Bearer {user['token']}"}
 
-def create_note(client: TestClient, user: dict, text: str, title: str | None = None) -> dict:
+def create_note(
+    client: TestClient,
+    user: dict,
+    text: str,
+    title: str | None = None,
+    ai_mode: str = "auto",
+) -> dict:
     response = client.post(
         "/api/items",
         headers=auth_headers(user),
-        json={"type": "note", "text": text, "title": title},
+        json={"type": "note", "text": text, "title": title, "ai_mode": ai_mode},
     )
     assert response.status_code == 202, response.text
     return response.json()

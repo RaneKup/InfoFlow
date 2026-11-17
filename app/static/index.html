@@ -3,10 +3,29 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#070707">
   <meta name="description" content="InfoFlow AI — личная база знаний с AI-резюме, тегами и поиском по смыслу.">
   <title>InfoFlow AI</title>
+  <script>
+    (() => {
+      try {
+        const saved = JSON.parse(localStorage.getItem("infoflow_settings") || "{}");
+        const systemLight = window.matchMedia("(prefers-color-scheme: light)").matches;
+        const theme = saved.theme === "light" ? "light"
+          : saved.theme === "system" ? (systemLight ? "light" : "dark")
+          : "dark";
+        document.documentElement.dataset.theme = theme;
+        document.documentElement.dataset.accent = saved.accent || "graphite";
+        document.documentElement.dataset.font = saved.font || "normal";
+        document.documentElement.dataset.density = saved.density || "normal";
+        document.documentElement.dataset.motion = saved.motion === "reduced" ? "reduced" : "full";
+      } catch (_error) {
+        document.documentElement.dataset.theme = "dark";
+      }
+    })();
+  </script>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/static/styles.css">
+  <link rel="stylesheet" href="/static/styles.css?v=6">
 </head>
 <body>
   <section id="auth-screen" class="auth-screen">
@@ -76,17 +95,25 @@
       </a>
 
       <div class="search-box">
-        <span class="search-icon" aria-hidden="true">⌕</span>
+        <span class="search-icon" aria-hidden="true">
+          <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><circle cx="6" cy="6" r="4.2" stroke="currentColor" stroke-width="1.2"/><path d="M9.2 9.2L12.5 12.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+        </span>
         <input id="search-input" type="search" placeholder="Поиск по библиотеке" autocomplete="off">
-        <select id="search-mode" title="Режим поиска" aria-label="Режим поиска">
-          <option value="hybrid">Гибрид</option>
-          <option value="keyword">Ключевые слова</option>
-          <option value="semantic">По смыслу</option>
-        </select>
+        <div class="search-mode" id="search-mode-control">
+          <select id="search-mode" class="search-mode__select" aria-label="Режим поиска" title="Режим поиска">
+            <option value="hybrid">Гибрид</option>
+            <option value="keyword">Ключевые слова</option>
+            <option value="semantic">По смыслу</option>
+          </select>
+          <span class="search-mode__caret" aria-hidden="true">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 4l3 3 3-3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </span>
+        </div>
       </div>
 
       <div class="user-menu">
         <span id="user-email" class="user-email" title="Текущий пользователь"></span>
+        <button id="settings-btn" class="icon-btn settings-btn" type="button" title="Настройки" aria-label="Настройки">⚙</button>
         <button id="logout-btn" class="link-btn" type="button">Выйти</button>
       </div>
     </header>
@@ -186,8 +213,36 @@
               </div>
             </form>
 
+            <fieldset class="ai-choice" id="ai-choice">
+              <legend>Как обработать запись</legend>
+              <div class="ai-choice__grid">
+                <label class="choice-card">
+                  <input type="radio" name="ai-mode" value="auto" checked>
+                  <span class="choice-card__body">
+                    <span class="choice-card__title">С ИИ</span>
+                    <span class="choice-card__hint">Заголовок, резюме и теги</span>
+                  </span>
+                </label>
+                <label class="choice-card">
+                  <input type="radio" name="ai-mode" value="tags">
+                  <span class="choice-card__body">
+                    <span class="choice-card__title">Только теги</span>
+                    <span class="choice-card__hint">Текст и заголовок — ваши</span>
+                  </span>
+                </label>
+                <label class="choice-card">
+                  <input type="radio" name="ai-mode" value="manual">
+                  <span class="choice-card__body">
+                    <span class="choice-card__title">Вручную</span>
+                    <span class="choice-card__hint">Без ИИ и автотегов</span>
+                  </span>
+                </label>
+              </div>
+              <p class="ai-choice__note" id="ai-choice-note">AI подготовит заголовок, резюме и тематические теги. Текст останется без изменений.</p>
+            </fieldset>
+
             <p class="form-error" id="composer-error" role="alert"></p>
-            <p class="composer-note">AI сделает резюме, подберёт теги и сохранит материал для поиска по смыслу.</p>
+            <p class="composer-note" id="composer-note">AI сделает резюме, подберёт теги и сохранит материал для поиска по смыслу.</p>
           </div>
         </details>
 
@@ -237,6 +292,133 @@
           <p>AI извлекает текст, готовит резюме, расставляет теги и строит индекс для поиска по смыслу.</p>
         </section>
       </aside>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="site-footer__inner">
+      <p>© 2026 InfoFlow AI. Все права защищены.</p>
+      <nav class="site-footer__links" aria-label="Правовая информация">
+        <button class="footer-link" type="button" data-legal="privacy">Политика конфиденциальности</button>
+        <button class="footer-link" type="button" data-legal="terms">Условия использования</button>
+      </nav>
+    </div>
+  </footer>
+
+  <div id="settings-modal" class="modal is-hidden" role="dialog" aria-modal="true" aria-labelledby="settings-title" aria-hidden="true">
+    <div class="modal__backdrop" data-settings-close></div>
+    <div class="modal__card modal__card--settings">
+      <header class="modal__head settings-head">
+        <div>
+          <p class="eyebrow">Настройки</p>
+          <h2 id="settings-title">Персонализация</h2>
+        </div>
+        <button class="icon-btn modal__close" data-settings-close type="button" aria-label="Закрыть">✕</button>
+      </header>
+
+      <div class="settings-scroll">
+        <section class="settings-group">
+          <div class="settings-group__head">
+            <h3>Тема</h3>
+            <p>Оформление интерфейса. Системная тема следует настройкам устройства.</p>
+          </div>
+          <div class="segmented" data-setting="theme" role="group" aria-label="Тема">
+            <button class="segmented__btn" type="button" data-value="dark">Тёмная</button>
+            <button class="segmented__btn" type="button" data-value="light">Светлая</button>
+            <button class="segmented__btn" type="button" data-value="system">Системная</button>
+          </div>
+        </section>
+
+        <section class="settings-group">
+          <div class="settings-group__head">
+            <h3>Акцент</h3>
+            <p>Цвет активных элементов и фокуса.</p>
+          </div>
+          <div class="swatches" data-setting="accent" role="group" aria-label="Акцентный цвет">
+            <button class="swatch" type="button" data-value="graphite" aria-label="Графит" title="Графит"><span></span></button>
+            <button class="swatch" type="button" data-value="blue" aria-label="Синий" title="Синий"><span></span></button>
+            <button class="swatch" type="button" data-value="green" aria-label="Зелёный" title="Зелёный"><span></span></button>
+            <button class="swatch" type="button" data-value="amber" aria-label="Янтарный" title="Янтарный"><span></span></button>
+          </div>
+        </section>
+
+        <section class="settings-group">
+          <div class="settings-group__head">
+            <h3>Размер текста</h3>
+            <p>Подберите комфортный масштаб интерфейса.</p>
+          </div>
+          <div class="segmented" data-setting="font" role="group" aria-label="Размер текста">
+            <button class="segmented__btn" type="button" data-value="small">Компактный</button>
+            <button class="segmented__btn" type="button" data-value="normal">Обычный</button>
+            <button class="segmented__btn" type="button" data-value="large">Крупный</button>
+          </div>
+        </section>
+
+        <section class="settings-group">
+          <div class="settings-group__head">
+            <h3>Плотность</h3>
+            <p>Больше записей на экране или больше воздуха между ними.</p>
+          </div>
+          <div class="segmented" data-setting="density" role="group" aria-label="Плотность">
+            <button class="segmented__btn" type="button" data-value="normal">Свободно</button>
+            <button class="segmented__btn" type="button" data-value="compact">Компактно</button>
+          </div>
+        </section>
+
+        <section class="settings-group">
+          <div class="settings-group__head">
+            <h3>Анимации</h3>
+            <p>Отключите движение, если интерфейс должен быть спокойнее.</p>
+          </div>
+          <div class="segmented" data-setting="motion" role="group" aria-label="Анимации">
+            <button class="segmented__btn" type="button" data-value="full">Включены</button>
+            <button class="segmented__btn" type="button" data-value="reduced">Отключены</button>
+          </div>
+        </section>
+
+        <section class="settings-group">
+          <div class="settings-group__head">
+            <h3>Обработка новых записей</h3>
+            <p>Значение по умолчанию для формы «Новая запись». Его можно изменить при сохранении.</p>
+          </div>
+          <div class="segmented segmented--wrap" data-setting="aiMode" role="group" aria-label="Обработка новых записей">
+            <button class="segmented__btn" type="button" data-value="auto">С ИИ</button>
+            <button class="segmented__btn" type="button" data-value="tags">Только теги</button>
+            <button class="segmented__btn" type="button" data-value="manual">Вручную</button>
+          </div>
+        </section>
+
+        <section class="settings-group">
+          <div class="settings-group__head">
+            <h3>Поиск по умолчанию</h3>
+            <p>Режим, который будет выбран при входе.</p>
+          </div>
+          <div class="segmented segmented--wrap" data-setting="searchMode" role="group" aria-label="Поиск по умолчанию">
+            <button class="segmented__btn" type="button" data-value="hybrid">Гибрид</button>
+            <button class="segmented__btn" type="button" data-value="keyword">Ключевые слова</button>
+            <button class="segmented__btn" type="button" data-value="semantic">По смыслу</button>
+          </div>
+        </section>
+
+        <div class="settings-footer">
+          <p>Настройки сохраняются в этом браузере и не передаются на сервер.</p>
+          <button id="settings-reset" class="btn btn--ghost btn--small" type="button">Сбросить</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="legal-modal" class="modal is-hidden" role="dialog" aria-modal="true" aria-labelledby="legal-title" aria-hidden="true">
+    <div class="modal__backdrop" data-legal-close></div>
+    <div class="modal__card modal__card--legal">
+      <header class="modal__head settings-head">
+        <div>
+          <p class="eyebrow">Правовая информация</p>
+          <h2 id="legal-title">Политика конфиденциальности</h2>
+        </div>
+        <button class="icon-btn modal__close" data-legal-close type="button" aria-label="Закрыть">✕</button>
+      </header>
+      <div id="legal-body" class="legal-body" tabindex="0"></div>
     </div>
   </div>
 
@@ -318,6 +500,6 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <script src="/static/app.js" defer></script>
+  <script src="/static/app.js?v=6" defer></script>
 </body>
 </html>
